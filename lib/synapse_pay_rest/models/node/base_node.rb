@@ -298,5 +298,15 @@ module SynapsePayRest
     def ==(other)
       other.instance_of?(self.class) && !id.nil? && id == other.id
     end
+
+    def update(payload)
+      if payload.empty?
+        raise ArgumentError, 'must provide a key-value pair to update. keys: login,
+          read_only, phone_number, legal_name, remove_phone_number, remove_login'
+      end
+
+      response = user.client.nodes.patch(user_id: user.id, node_id: id, payload: payload)
+      self.class.from_response(user, response)
+    end
   end
 end
