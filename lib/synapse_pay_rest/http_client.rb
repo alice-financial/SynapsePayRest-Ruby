@@ -47,6 +47,13 @@ module SynapsePayRest
     def headers
       user    = "#{config[:oauth_key]}|#{config[:fingerprint]}"
       gateway = "#{config[:client_id]}|#{config[:client_secret]}"
+
+      access_control_headers = {
+        'Access-Control-Allow-Methods' => 'GET,PUT,POST,DELETE,OPTIONS',
+        'Access-Control-Allow-Headers' => 'X-Requested-With,Content-type,Accept,X-Access-Token,X-Key',
+        'Access-Control-Allow-Origin' => '*'
+      }
+
       headers = {
         :content_type  => :json,
         :accept        => :json,
@@ -54,6 +61,9 @@ module SynapsePayRest
         'X-SP-USER'    => user,
         'X-SP-USER-IP' => config[:ip_address]
       }
+
+      headers.merge!(access_control_headers) if @proxy_url
+      headers
     end
     # Alias for #headers (legacy name)
     alias_method :get_headers, :headers
