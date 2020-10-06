@@ -73,9 +73,9 @@ module SynapsePayRest
         raise ArgumentError, 'client must be a SynapsePayRest::Client' unless client.is_a?(Client)
         raise ArgumentError, 'id must be a String' unless id.is_a?(String)
 
-        p 'Attempting GET'
         response = client.users.get(user_id: id, full_dehydrate: full_dehydrate)
-        p 'Finished GET'
+
+        puts "Find Response: #{response}"
         
         from_response(client, response)
       end

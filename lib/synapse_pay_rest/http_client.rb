@@ -10,10 +10,6 @@ module SynapsePayRest
     #   @return [Hash] various settings related to request headers
     attr_accessor :base_url, :config
 
-    # @!attribute [rw] proxy_url
-    #   @return [String] the url which is used to proxy outboard requests
-    attr_reader :proxy_url
-
     # @param base_url [String] the base url of the API (production or sandbox)
     # @param client_id [String]
     # @param client_secret [String]
@@ -28,8 +24,10 @@ module SynapsePayRest
       RestClient.log = log_to if options[:logging]
       @logging       = options[:logging]
 
-      RestClient.proxy = options[:proxy_url] if options[:proxy_url]
-      @proxy_url = options[:proxy_url]
+      @sandbox_url = options[:sandbox_url]
+      @live_url = options[:live_url]
+
+      puts "URLs:\n#{@sandbox_url}\n#{@live_url}" if @logging
 
       @config = {
         client_id:     client_id,
@@ -87,6 +85,22 @@ module SynapsePayRest
       nil
     end
 
+    def ssl_certicate
+      pem = @development_mode ? Vgs::SANDBOX_PEM : Vgs::LIVE_PEM
+      OpenSSL::X509::Certificate.new(pem)
+    end
+
+    def proxy_url
+      @development_mode ? @sandbox_url : @live_url
+    end
+
+    def with_vgs_tunnel
+      puts "Proxy URL: #{proxy_url}"
+      RestClient.proxy = proxy_url
+      yield
+      RestClient.proxy = nil
+    end
+
     # Sends a POST request to the given path with the given payload.
     # 
     # @param path [String]
@@ -97,7 +111,11 @@ module SynapsePayRest
     # 
     # @return [Hash] API response
     def post(path, payload, **options)
+      puts '-- POST --------' if @logging
       headers = get_headers
+      puts "Headers: #{headers}" if @logging
+      puts "Options: #{options}" if @logging
+
       if options[:idempotency_key]
         headers = headers.merge({'X-SP-IDEMPOTENCY-KEY' => options[:idempotency_key]})
       end
@@ -105,10 +123,12 @@ module SynapsePayRest
       response = RestClient::Request.execute(method: :post,
                                              url: full_url(path),
                                              payload: payload.to_json,
-                                             ssl_client_cert: OpenSSL::X509::Certificate.new(SANDBOX_PEM),
+                                             ssl_client_cert: ssl_certicate,
                                              verify_ssl: OpenSSL::SSL::VERIFY_NONE,
+                                             proxy: @sandbox_url,
                                              headers: headers)
-      p 'RESPONSE:', JSON.parse(response) if @logging
+      puts "Response: #{response}" if @logging
+      puts '-- POST --------' if @logging
       JSON.parse(response)
     end
 
@@ -126,32 +146,6 @@ module SynapsePayRest
       JSON.parse(response)
     end
 
-    SANDBOX_PEM = <<~PEM.freeze
-      -----BEGIN CERTIFICATE-----
-      MIID2TCCAsGgAwIBAgIHAN4Gs/LGhzANBgkqhkiG9w0BAQ0FADB5MSQwIgYDVQQD
-      DBsqLnNhbmRib3gudmVyeWdvb2Rwcm94eS5jb20xITAfBgNVBAoMGFZlcnkgR29v
-      ZCBTZWN1cml0eSwgSW5jLjEuMCwGA1UECwwlVmVyeSBHb29kIFNlY3VyaXR5IC0g
-      RW5naW5lZXJpbmcgVGVhbTAgFw0xNjAyMDkyMzUzMzZaGA8yMTE3MDExNTIzNTMz
-      NloweTEkMCIGA1UEAwwbKi5zYW5kYm94LnZlcnlnb29kcHJveHkuY29tMSEwHwYD
-      VQQKDBhWZXJ5IEdvb2QgU2VjdXJpdHksIEluYy4xLjAsBgNVBAsMJVZlcnkgR29v
-      ZCBTZWN1cml0eSAtIEVuZ2luZWVyaW5nIFRlYW0wggEiMA0GCSqGSIb3DQEBAQUA
-      A4IBDwAwggEKAoIBAQDI3ukHpxIlDCvFjpqn4gAkrQVdWll/uI0Kv3wirwZ3Qrpg
-      BVeXjInJ+rV9r0ouBIoY8IgRLak5Hy/tSeV6nAVHv0t41B7VyoeTAsZYSWU11deR
-      DBSBXHWH9zKEvXkkPdy9tgHnvLIzui2H59OPljV7z3sCLguRIvIIw8djaV9z7FRm
-      KRsfmYHKOBlSO4TlpfXQg7jQ5ds65q8FFGvTB5qAgLXS8W8pvdk8jccmuzQXFUY+
-      ZtHgjThg7BHWWUn+7m6hQ6iHHCj34Qu69F8nLamd+KJ//14lukdyKs3AMrYsFaby
-      k+UGemM/s2q3B+39B6YKaHao0SRzSJC7qDwbWPy3AgMBAAGjZDBiMB0GA1UdDgQW
-      BBRWlIRrE2p2P018VTzTb6BaeOFhAzAPBgNVHRMBAf8EBTADAQH/MAsGA1UdDwQE
-      AwIBtjAjBgNVHSUEHDAaBggrBgEFBQcDAQYIKwYBBQUHAwIGBFUdJQAwDQYJKoZI
-      hvcNAQENBQADggEBAGWxLFlr0b9lWkOLcZtR9IDVxDL9z+UPFEk70D3NPaqXkoE/
-      TNNUkXgS6+VBA2G8nigq2Yj8qoIM+kTXPb8TzWv+lrcLm+i+4AShKVknpB15cC1C
-      /NJfyYGRW66s/w7HNS20RmrdN+bWS0PA4CVLXdGzUJn0PCsfsS+6Acn7RPAE+0A8
-      WB7JzXWi8x9mOJwiOhodp4j41mv+5eHM0reMh6ycuYbjquDNpiNnsLztk6MGsgAP
-      5C59drQWJU47738BcfbByuSTYFog6zNYCm7ACqbtiwvFTwjneNebOhsOlaEAHjup
-      d4QBqYVs7pzkhNNp9oUvv4wGf/KJcw5B9E6Tpfk=
-      -----END CERTIFICATE-----
-    PEM
-
     # Sends a GET request to the given path with the given payload.
     # 
     # @param path [String]
@@ -160,14 +154,18 @@ module SynapsePayRest
     # 
     # @return [Hash] API response
     def get(path)
-      p "Headers: #{headers}"
+      puts '-- Request: GET ------------'
+      puts "URI: #{full_url(path)}"
+
       response = RestClient::Request.execute(method: :get,
                                              url: full_url(path),
-                                             ssl_client_cert: OpenSSL::X509::Certificate.new(SANDBOX_PEM),
+                                             ssl_client_cert: ssl_certicate,
                                              verify_ssl: OpenSSL::SSL::VERIFY_NONE,
+                                             proxy: @sandbox_url,
                                              headers: headers)
 
-      p 'RESPONSE:', JSON.parse(response) if @logging
+      p 'RESPONSE:', JSON.parse(response) #if @logging
+      puts '-- Request: GET ------------'
       JSON.parse(response)
     end
 
