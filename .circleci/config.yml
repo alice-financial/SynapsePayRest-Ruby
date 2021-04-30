@@ -1,18 +1,31 @@
 version: 2.1
 orbs:
-  ruby: circleci/ruby@0.1.2
+  ruby: circleci/ruby@1.0
+
+dependencies:
+  pre:
+    - echo Y | rvm @global do gem uninstall bundler
+    - gem install bundler -v '1.10'
+    - gem uninstall bundler -v '1.13.0'
 
 jobs:
   build:
     docker:
-      - image: circleci/ruby:2.6.3-stretch-node
-    executor: ruby/default
+      - image: cimg/ruby:2.7.3
     steps:
+      - run:
+          name: Force Bundler Version
+          command: |
+            sudo gem update --system
+            echo 'export BUNDLER_VERSION=1.10 >> $BASH_ENV
+            source $BASH_ENV
+            gem install bundler
       - checkout
       - run:
           name: Which bundler?
           command: bundle -v
-      - ruby/bundle-install
+      - ruby/install-deps:
+          bundler-version: "1.10"
       - run:
-        name: Test
-        command: bundle exec rspec
+          name: Test
+          command: bundle exec rspec
