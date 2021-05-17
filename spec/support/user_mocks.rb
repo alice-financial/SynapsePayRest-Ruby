@@ -1,6 +1,6 @@
 module UserMocks
-  def mock_user_authentication(user_id: "user_id_123")
-    stub_request(:post, "https://uat-api.synapsefi.com/v3.1/oauth/#{user_id}")
+  def mock_user_authentication
+    stub_request(:post, "https://uat-api.synapsefi.com/v3.1/oauth/user_id_123")
       .with({
         body: "{\"refresh_token\":\"ref1\"}",
         headers: {
@@ -9,7 +9,6 @@ module UserMocks
           "Content-Length" => "24",
           "Content-Type" => "application/json",
           "Host" => "uat-api.synapsefi.com",
-          "User-Agent" => "rest-client/2.1.0 (darwin18.2.0 x86_64) ruby/2.6.0p0",
           "X-Sp-Gateway" => "1|2",
           "X-Sp-User" => "|",
           "X-Sp-User-Ip" => "127.0.0.1",
@@ -24,7 +23,7 @@ module UserMocks
         headers: {},
       )
 
-    stub_request(:get, "https://uat-api.synapsefi.com/v3.1/users/#{user_id}?full_dehydrate=no")
+    stub_request(:get, "https://uat-api.synapsefi.com/v3.1/users/user_id_123?full_dehydrate=no")
       .with({
         headers: {
           "Accept" => "application/json",
@@ -39,7 +38,7 @@ module UserMocks
       .to_return(
         status: 200,
         body: {
-          "_id" => "#{user_id}",
+          "_id" => "user_id_123",
           refresh_token: "ref1",
           logins: [],
           phone_numbers: [],

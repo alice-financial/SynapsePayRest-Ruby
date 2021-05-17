@@ -1,5 +1,4 @@
 require "support/shipment_mocks"
-require "pry"
 
 RSpec.configure do |c|
   c.include ShipmentMocks
@@ -16,7 +15,7 @@ RSpec.describe SynapsePayRest::Shipment do
         id: "shipment_id_123",
       }
       mock_existing_shipment
-      mock_user_authentication(user_id: "user_id_123")
+      mock_user_authentication
 
       result = SynapsePayRest::Shipment.find(client: client,
                                              **shipment_attributes)
@@ -48,7 +47,7 @@ RSpec.describe SynapsePayRest::Shipment do
         card_style_id: "22988",
       }
       mock_shipment_creation
-      mock_user_authentication(user_id: "user_id_123")
+      mock_user_authentication
 
       result = SynapsePayRest::Shipment.create(**params)
 

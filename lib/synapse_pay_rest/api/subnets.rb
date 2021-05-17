@@ -77,6 +77,12 @@ module SynapsePayRest
       client.patch(path, payload)
     end
 
+    # TODO: remove once ENG-5682 is on Production
+    def ship(user_id:, node_id:, subnet_id:, payload:)
+      path = ship_card_path(user_id: user_id, node_id: node_id, subnet_id: subnet_id)
+      client.patch(path, payload)
+    end
+
     def view_shipment_info(user_id:, node_id:, subnet_id:)
       path = ship_card_path(user_id: user_id, node_id: node_id, subnet_id: subnet_id)
       client.get(path)
