@@ -32,7 +32,6 @@ RSpec.describe SynapsePayRest::Shipment do
     end
   end
 
-  # TODO: finish this spec
   describe ".create" do
     it "creates a shipment" do
       client = SynapsePayRest::Client.new(client_id: "1", client_secret: "2", ip_address: "127.0.0.1")
