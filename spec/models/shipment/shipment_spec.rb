@@ -21,7 +21,7 @@ RSpec.describe SynapsePayRest::Shipment do
                                              **shipment_attributes)
 
       expect(result.address.to_s).to include("1 MARKET ST STE 1000")
-      expect(result.card_style_id).to include("22988")
+      expect(result.card_style_id).to include("card_style_id_123")
       expect(result.created_on).to_not be_nil
       expect(result.created_on).to_not be_nil
       expect(result.delivery_carrier).to_not be_nil
@@ -43,7 +43,7 @@ RSpec.describe SynapsePayRest::Shipment do
         fee_node_id: "5a8f017abdceaf004e5f23fd",
         cardholder_name: "TONA NUNEZ II",
         delivery_method_name: "STANDARD|TRACKING",
-        card_style_id: "22988",
+        card_style_id: "card_style_id_123",
       }
       mock_shipment_creation
       mock_user_authentication
@@ -51,7 +51,7 @@ RSpec.describe SynapsePayRest::Shipment do
       result = SynapsePayRest::Shipment.create(**params)
 
       expect(result.address.to_s).to include("1 MARKET ST STE 1000")
-      expect(result.card_style_id).to include("22988")
+      expect(result.card_style_id).to include("card_style_id_123")
       expect(result.created_on).to_not be_nil
       expect(result.created_on).to_not be_nil
       expect(result.delivery_carrier).to_not be_nil
