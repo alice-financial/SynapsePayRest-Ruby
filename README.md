@@ -36,18 +36,10 @@ For minor issues, please open a pull request. For larger changes or features, pl
 
 ## Running the Test Suite
 
-If you haven't already, run `cp .env.sample .env` and set the `TEST_CLIENT_ID` and `TEST_CLIENT_SECRET` environment variables.
-
 To run all tests, execute:
 
 ```bash
-rake
-```
-
-To run a specific file or test run:
-
-```bash
-m path/to/file:line_number
+bundle exec rspec
 ```
 
 ## License
